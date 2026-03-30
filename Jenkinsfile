@@ -46,7 +46,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                    chmod 400 /var/lib/jenkins/nv_shiv.pem
+                    sudo chmod 400 /var/lib/jenkins/nv_shiv.pem
                     ansible-playbook deploy_tomcat.yml -i hosts.ini --private-key /var/lib/jenkins/nv_shiv.pem -u ubuntu -e 'BUILD_NUMBER=${BUILD_NUMBER}'
                     """
                 }
