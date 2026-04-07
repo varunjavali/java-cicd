@@ -61,11 +61,11 @@
     <distributionManagement>
         <repository>
             <id>nexus</id>
-            <url>http://43.205.95.5:8081/repository/maven-releases/</url>
+            <url>http://43.205.95.5:8081/repository/varun/</url>
         </repository>
         <snapshotRepository>
             <id>nexus</id>
-            <url>http://43.205.95.5:8081/repository/maven-snapshots/</url>
+            <url>http://43.205.95.5:8081/repository/varun/</url>
         </snapshotRepository>
     </distributionManagement>
 </project>
