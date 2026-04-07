@@ -6,7 +6,7 @@ pipeline {
         ECR_REPO     = '768571909004.dkr.ecr.ap-south-1.amazonaws.com/java-app'
         EKS_CLUSTER  = 'varun-cluster'
         SONAR_PROJECT_KEY = 'java-frontend-app'
-        NEXUS_URL    = 'http://<NEXUS_IP>:8081'  // ← replace with your Nexus IP
+        NEXUS_URL    = 'http://43.205.95.5:8081/'  // ← replace with your Nexus IP
         NEXUS_REPO   = 'maven-releases'           // ← or maven-snapshots
     }
     tools {
