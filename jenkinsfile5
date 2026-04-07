@@ -29,7 +29,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar_id') {  // matches credential/server ID in Jenkins
+                withSonarQubeEnv('sonarqube') {  // matches credential/server ID in Jenkins
                     sh '''
                         mvn sonar:sonar \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
