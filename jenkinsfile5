@@ -2,8 +2,8 @@ pipeline {
     agent any
     environment {
         AWS_REGION   = 'ap-south-1'
-        ECR_REPO     = '218137097139.dkr.ecr.ap-south-1.amazonaws.com/java-app'
-        EKS_CLUSTER  = 'java-app-cluster1'
+        ECR_REPO     = '768571909004.dkr.ecr.ap-south-1.amazonaws.com/varun'
+        EKS_CLUSTER  = 'varun-cluster'
     }
     tools {
         maven 'maven'
@@ -11,7 +11,7 @@ pipeline {
     stages {
         stage('Clone Repo') {
             steps {
-                git branch: 'main', url: 'https://github.com/vtricksshiva/java-cicd.git'
+                git branch: 'main', url: 'https://github.com/varunjavali/java-cicd'
             }
         }
         stage('Build Binaries') {
