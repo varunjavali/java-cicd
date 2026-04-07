@@ -7,7 +7,7 @@ pipeline {
         EKS_CLUSTER       = 'varun-cluster'
         SONAR_PROJECT_KEY = 'java-frontend-app'
         NEXUS_URL         = 'http://43.205.95.5:8081'
-        NEXUS_REPO        = 'maven-releases'
+        NEXUS_REPO        = 'varun'
     }
     tools {
         maven 'maven'
