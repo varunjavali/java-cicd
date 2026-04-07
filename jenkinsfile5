@@ -5,6 +5,9 @@ pipeline {
         ECR_REGISTRY = '768571909004.dkr.ecr.ap-south-1.amazonaws.com'
         ECR_REPO     = '768571909004.dkr.ecr.ap-south-1.amazonaws.com/java-app'
         EKS_CLUSTER  = 'varun-cluster'
+        SONAR_PROJECT_KEY = 'java-frontend-app'
+        NEXUS_URL    = 'http://<NEXUS_IP>:8081'  // ← replace with your Nexus IP
+        NEXUS_REPO   = 'maven-releases'           // ← or maven-snapshots
     }
     tools {
         maven 'maven'
@@ -12,15 +15,57 @@ pipeline {
     stages {
         stage('Clone Repo') {
             steps {
+                cleanWs()
                 git branch: 'main', url: 'https://github.com/varunjavali/java-cicd'
             }
         }
+
         stage('Build Binaries') {
             steps {
                 sh 'mvn clean install'
                 sh 'cp target/java-frontend-app.war .'
             }
         }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar_id') {  // matches credential/server ID in Jenkins
+                    sh '''
+                        mvn sonar:sonar \
+                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                          -Dsonar.projectName=${SONAR_PROJECT_KEY} \
+                          -Dsonar.java.binaries=target/classes
+                    '''
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Upload to Nexus') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'nexus_id',
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    sh '''
+                        mvn deploy \
+                          -DskipTests \
+                          -DaltDeploymentRepository=nexus::default::${NEXUS_URL}/repository/${NEXUS_REPO} \
+                          -Dusername=${NEXUS_USER} \
+                          -Dpassword=${NEXUS_PASS}
+                    '''
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh """
@@ -30,6 +75,7 @@ pipeline {
                 """
             }
         }
+
         stage('Push to ECR') {
             steps {
                 sh """
@@ -40,6 +86,7 @@ pipeline {
                 """
             }
         }
+
         stage('Deploy to EKS') {
             steps {
                 sh """
@@ -52,6 +99,7 @@ pipeline {
             }
         }
     }
+
     post {
         success {
             sh "kubectl get svc java-frontend-svc"
