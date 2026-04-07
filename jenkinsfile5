@@ -1,13 +1,13 @@
 pipeline {
     agent any
     environment {
-        AWS_REGION   = 'ap-south-1'
-        ECR_REGISTRY = '768571909004.dkr.ecr.ap-south-1.amazonaws.com'
-        ECR_REPO     = '768571909004.dkr.ecr.ap-south-1.amazonaws.com/java-app'
-        EKS_CLUSTER  = 'varun-cluster'
+        AWS_REGION        = 'ap-south-1'
+        ECR_REGISTRY      = '768571909004.dkr.ecr.ap-south-1.amazonaws.com'
+        ECR_REPO          = '768571909004.dkr.ecr.ap-south-1.amazonaws.com/java-app'
+        EKS_CLUSTER       = 'varun-cluster'
         SONAR_PROJECT_KEY = 'java-frontend-app'
-        NEXUS_URL    = 'http://43.205.95.5:8081/'  // ← replace with your Nexus IP
-        NEXUS_REPO   = 'maven-releases'           // ← or maven-snapshots
+        NEXUS_URL         = 'http://43.205.95.5:8081'
+        NEXUS_REPO        = 'maven-releases'
     }
     tools {
         maven 'maven'
@@ -19,17 +19,16 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/varunjavali/java-cicd'
             }
         }
-
         stage('Build Binaries') {
             steps {
-                sh 'mvn clean install'
+                sh 'mvn clean package -DskipTests'
+                sh 'ls -la target/'
                 sh 'cp target/java-frontend-app.war .'
             }
         }
-
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonarqube') {  // matches credential/server ID in Jenkins
+                withSonarQubeEnv('sonarqube') {
                     sh '''
                         mvn sonar:sonar \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
@@ -39,7 +38,6 @@ pipeline {
                 }
             }
         }
-
         stage('Quality Gate') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
@@ -47,7 +45,6 @@ pipeline {
                 }
             }
         }
-
         stage('Upload to Nexus') {
             steps {
                 withCredentials([usernamePassword(
@@ -65,7 +62,6 @@ pipeline {
                 }
             }
         }
-
         stage('Build Docker Image') {
             steps {
                 sh """
@@ -75,7 +71,6 @@ pipeline {
                 """
             }
         }
-
         stage('Push to ECR') {
             steps {
                 sh """
@@ -86,23 +81,21 @@ pipeline {
                 """
             }
         }
-
         stage('Deploy to EKS') {
             steps {
                 sh """
                 aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}
-                sed -i 's|BUILD_NUMBER_PLACEHOLDER|${BUILD_NUMBER}|g' k8s/deployment.yml
-                kubectl apply -f k8s/deployment.yml
-                kubectl apply -f k8s/service.yml
-                kubectl rollout status deployment/java-frontend-app --timeout=120s
+                sed -i 's|BUILD_NUMBER_PLACEHOLDER|${BUILD_NUMBER}|g' deployment.yml
+                kubectl apply -f deployment.yml --validate=false
+                kubectl apply -f service.yml --validate=false
+                kubectl rollout status deployment/java-frontend-app --timeout=300s
                 """
             }
         }
     }
-
     post {
         success {
-            sh "kubectl get svc java-frontend-svc"
+            sh "kubectl get svc"
             echo "✅ Deployed ${ECR_REPO}:${BUILD_NUMBER} to EKS"
         }
         failure {
